@@ -1,0 +1,140 @@
+# CineBook - Cinema Ticket Booking Website
+
+A modern full-stack cinema ticket booking platform inspired by BookMyShow, built with a React + Vite frontend, a Spring Boot backend, and MySQL database.
+
+## Project Features
+- Homepage with featured movies, search, and movie carousels
+- Movie details page with theatre and showtime selection
+- Interactive seat selection with pricing calculation
+- User registration/login and booking flow
+- Payment simulation with e-ticket generation
+- My Bookings page with download-ready ticket summary
+- Admin dashboard for movies, theatres, bookings, and pricing
+- Fully responsive dark cinema-themed UI
+
+## Tech Stack
+- Frontend: React, React Router, Vite, Bootstrap, Axios
+- Backend: Java Spring Boot 3, JPA, REST API
+- Database: MySQL 8
+
+## Folder Structure
+```text
+CineBook-Cinema-Ticket-Booking/
+├── README.md
+├── .gitignore
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── index.html
+│   ├── .env.example
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       ├── index.css
+│       └── api.js
+├── backend/
+│   └── cinebook-api/
+│       ├── pom.xml
+│       └── src/
+│           ├── main/
+│           │   ├── java/com/cinebook/
+│           │   │   ├── CineBookApplication.java
+│           │   │   ├── controller/
+│           │   │   │   ├── AuthController.java
+│           │   │   │   ├── MovieController.java
+│           │   │   │   ├── TheatreController.java
+│           │   │   │   ├── BookingController.java
+│           │   │   │   └── AdminController.java
+│           │   │   ├── entity/
+│           │   │   │   ├── User.java
+│           │   │   │   ├── Movie.java
+│           │   │   │   ├── Theatre.java
+│           │   │   │   └── Booking.java
+│           │   │   ├── repository/
+│           │   │   │   ├── UserRepository.java
+│           │   │   │   ├── MovieRepository.java
+│           │   │   │   ├── TheatreRepository.java
+│           │   │   │   └── BookingRepository.java
+│           │   │   └── service/
+│           │   │       └── CineBookService.java
+│           │   └── resources/
+│           │       └── application.properties
+└── database/
+    ├── schema.sql
+    └── seed.sql
+```
+
+## 1) MySQL Setup
+```sql
+CREATE DATABASE cinebook_db;
+USE cinebook_db;
+```
+
+Then import the schema and seed files:
+```bash
+mysql -u root -p < database/schema.sql
+mysql -u root -p < database/seed.sql
+```
+
+## 2) Backend Setup
+Open `backend/cinebook-api/src/main/resources/application.properties` and update username/password:
+```properties
+spring.datasource.username=root
+spring.datasource.password=root
+```
+
+Run backend:
+```bash
+cd backend/cinebook-api
+mvn clean install
+mvn spring-boot:run
+```
+
+Backend API runs at:
+```text
+http://localhost:8080/api
+```
+
+## 3) Frontend Setup
+```bash
+cd frontend
+npm install
+cp .env.example .env
+npm run dev
+```
+
+The frontend runs at:
+```text
+http://localhost:5173
+```
+
+## 4) Default Login
+- Admin: `admin@cinebook.com` / `admin123`
+- User: `user@cinebook.com` / `user123`
+
+## 5) Demo Flow
+1. Signup or login
+2. Browse movies and select one
+3. Choose theatre and showtime
+4. Select seats
+5. Proceed to payment simulation
+6. Confirm booking and view My Bookings
+
+## 6) Useful Commands
+```bash
+# Backend build
+cd backend/cinebook-api
+mvn test
+
+# Frontend build
+cd frontend
+npm run build
+```
+
+## 7) Notes
+- The frontend includes both backend API integration and local demo fallbacks for development without a running backend.
+- This project is suitable for a third-year Information Technology mini-project.
+- All major features are implemented in a clean, modular structure.
+
+## License
+This project is created for educational and college project use.

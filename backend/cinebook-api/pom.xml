@@ -1,0 +1,16 @@
+INSERT INTO users (name, email, password, role) VALUES
+('Admin User', 'admin@cinebook.com', 'admin123', 'ADMIN'),
+('Demo User', 'user@cinebook.com', 'user123', 'USER');
+
+INSERT INTO movies (title, description, duration, genre, language, release_date, rating, poster_url, banner_url, status, featured) VALUES
+('Dune: Part Two', 'Paul Atreides unites with the Fremen while seeking revenge against those who destroyed his family.', '166 min', 'Sci-Fi', 'English', '2024-03-01', 8.6, 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=800&q=80', 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1400&q=80', 'NOW_SHOWING', TRUE),
+('Oppenheimer', 'The story of J. Robert Oppenheimer and the creation of the atomic bomb.', '180 min', 'Biography', 'English', '2023-07-21', 8.4, 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80', 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1400&q=80', 'NOW_SHOWING', TRUE),
+('Murder Mystery 2', 'Detectives and former spouses return for another thrilling mystery adventure.', '110 min', 'Comedy', 'English', '2023-03-31', 6.5, 'https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&w=800&q=80', 'https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&w=1400&q=80', 'NOW_SHOWING', FALSE),
+('Salaar', 'A fierce rebel enters a battle for power and survival in a kingdom ruled by fear.', '170 min', 'Action', 'Telugu', '2023-12-22', 8.1, 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80', 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80', 'UPCOMING', TRUE),
+('Kalki 2898 AD', 'A warrior journeys through time as the universe teeters on the brink of destruction.', '180 min', 'Sci-Fi', 'Telugu', '2024-06-27', 7.9, 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?auto=format&fit=crop&w=800&q=80', 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?auto=format&fit=crop&w=1400&q=80', 'UPCOMING', FALSE),
+('The Batman', 'A detective follows clues in the shadows as Gotham faces its darkest night.', '176 min', 'Action', 'English', '2022-03-04', 8.3, 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=800&q=80', 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=80', 'NOW_SHOWING', FALSE);
+
+INSERT INTO theatres (name, city, address, screen_names) VALUES
+('PVR Cinemas', 'Hyderabad', 'Banjara Hills, Hyderabad', 'Screen 1, Screen 2, Screen 3'),
+('INOX Leisure', 'Hyderabad', 'Gachibowli, Hyderabad', 'Screen A, Screen B'),
+('Carnival Cinema', 'Hyderabad', 'Madhapur, Hyderabad', 'Screen X, Screen Y, Screen Z');

@@ -1,0 +1,666 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { createBooking, demoMovies, fetchMovies, fetchTheatres, processPayment, loginUser, registerUser } from './api';
+
+const SHOWTIMES = ['10:00 AM', '1:30 PM', '6:00 PM', '9:30 PM'];
+const PRICE_MAP = { Silver: 180, Gold: 240, Platinum: 320 };
+const SEAT_LAYOUT = [
+  ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'],
+  ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'],
+  ['C1', 'C2', 'C3', 'C4', 'C5', 'C5', 'C6', 'C7'],
+  ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'],
+  ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8'],
+];
+
+const initialBookings = [
+  {
+    bookingId: 'CB-AB12CD34',
+    movieTitle: 'Dune: Part Two',
+    theatreName: 'PVR Cinemas',
+    showTime: '6:00 PM',
+    bookingDate: '2026-10-04',
+    selectedSeats: 'A1, A2',
+    totalAmount: 480,
+    paymentStatus: 'PAID',
+    bookingStatus: 'CONFIRMED',
+    ticketDownload: 'Download Ticket',
+  },
+  {
+    bookingId: 'CB-XY98KL21',
+    movieTitle: 'The Batman',
+    theatreName: 'INOX Leisure',
+    showTime: '9:30 PM',
+    bookingDate: '2026-10-06',
+    selectedSeats: 'D3, D4',
+    totalAmount: 550,
+    paymentStatus: 'PAID',
+    bookingStatus: 'UPCOMING',
+    ticketDownload: 'Download Ticket',
+  },
+];
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="movie/:movieId" element={<MovieDetailPage />} />
+        <Route path="booking/:movieId" element={<BookingPage />} />
+        <Route path="payment" element={<PaymentPage />} />
+        <Route path="bookings" element={<BookingsPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="signup" element={<SignupPage />} />
+        <Route path="admin" element={<AdminPage />} />
+      </Route>
+    </Routes>
+  );
+}
+
+function Layout() {
+  const storedUser = JSON.parse(localStorage.getItem('cinebook-user') || 'null');
+  const [user, setUser] = useState(storedUser);
+
+  useEffect(() => {
+    setUser(JSON.parse(localStorage.getItem('cinebook-user') || 'null'));
+  }, [localStorage.getItem('cinebook-user')]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('cinebook-user');
+    setUser(null);
+    window.location.href = '/';
+  };
+
+  return (
+    <>
+      <header className="topbar">
+        <div className="container nav-wrap">
+          <Link to="/" className="brand">
+            <span className="brand-mark">C</span>
+            <span>CineBook</span>
+          </Link>
+
+          <nav className="main-nav">
+            <NavLink to="/">Home</NavLink>
+            <NavLink to="/">Movies</NavLink>
+            <NavLink to="/">Theatres</NavLink>
+            <NavLink to="/bookings">My Bookings</NavLink>
+            <NavLink to="/admin">Admin</NavLink>
+          </nav>
+
+          <div className="nav-actions">
+            <div className="search-box">
+              <input type="text" placeholder="Search movies" />
+            </div>
+
+            {user ? (
+              <div className="user-box">
+                <span>{user.name}</span>
+                <button className="btn btn-outline" onClick={handleLogout}>Logout</button>
+              </div>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-outline">Login</Link>
+                <Link to="/signup" className="btn btn-primary">Sign Up</Link>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <Routes>
+          <Route index element={<HomePage />} />
+          <Route path="movie/:movieId" element={<MovieDetailPage />} />
+          <Route path="booking/:movieId" element={<BookingPage />} />
+          <Route path="payment" element={<PaymentPage />} />
+          <Route path="bookings" element={<BookingsPage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="signup" element={<SignupPage />} />
+          <Route path="admin" element={<AdminPage />} />
+        </Routes>
+      </main>
+    </>
+  );
+}
+
+function HomePage() {
+  const [movies, setMovies] = useState([]);
+  const [selectedTab, setSelectedTab] = useState('nowShowing');
+
+  useEffect(() => {
+    const loadMovies = async () => {
+      const data = await fetchMovies();
+      setMovies(data);
+    };
+    loadMovies();
+  }, []);
+
+  const featured = movies.filter((movie) => movie.featured);
+  const nowShowing = movies.filter((movie) => movie.status === 'NOW_SHOWING');
+  const upcoming = movies.filter((movie) => movie.status === 'UPCOMING');
+
+  return (
+    <>
+      <section className="hero">
+        <div className="container hero-inner">
+          <div className="hero-copy">
+            <span className="eyebrow">Book tickets in minutes</span>
+            <h1>Watch blockbuster stories live on the big screen.</h1>
+            <p>Discover the latest movies, match your perfect showtime, and reserve your seats with CineBook.</p>
+            <div className="hero-actions">
+              <Link to="/" className="btn btn-primary">Explore Movies</Link>
+              <Link to="/bookings" className="btn btn-secondary">My Bookings</Link>
+            </div>
+          </div>
+
+          <div className="hero-carousel">
+            {featured.slice(0, 3).map((movie) => (
+              <div key={movie.id} className="hero-card" style={{ backgroundImage: `url(${movie.bannerUrl})` }}>
+                <div className="hero-card-content">
+                  <span>{movie.genre}</span>
+                  <h3>{movie.title}</h3>
+                  <Link to={`/movie/${movie.id}`} className="btn btn-primary">Book Now</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section container">
+        <div className="section-head">
+          <h2>Now Showing</h2>
+          <div className="tab-switcher">
+            <button className={selectedTab === 'nowShowing' ? 'active' : ''} onClick={() => setSelectedTab('nowShowing')}>Now Showing</button>
+            <button className={selectedTab === 'upcoming' ? 'active' : ''} onClick={() => setSelectedTab('upcoming')}>Upcoming</button>
+          </div>
+        </div>
+
+        <div className="movie-grid">
+          {(selectedTab === 'nowShowing' ? nowShowing : upcoming).map((movie) => (
+            <MovieCard key={movie.id} movie={movie} />
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function MovieCard({ movie }) {
+  return (
+    <div className="movie-card">
+      <div className="movie-poster" style={{ backgroundImage: `url(${movie.posterUrl})` }}>
+        <span className="rating">★ {movie.rating}</span>
+      </div>
+      <div className="movie-body">
+        <div className="meta-row">
+          <span>{movie.genre}</span>
+          <span>{movie.language}</span>
+        </div>
+        <h3>{movie.title}</h3>
+        <div className="movie-meta">
+          <span>{movie.duration}</span>
+          <span>{movie.releaseDate}</span>
+        </div>
+        <Link to={`/movie/${movie.id}`} className="btn btn-primary w-100">Book Now</Link>
+      </div>
+    </div>
+  );
+}
+
+function MovieDetailPage() {
+  const { movieId } = useParams();
+  const [movie, setMovie] = useState(null);
+  const [theatres, setTheatres] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const movies = await fetchMovies();
+      setMovie(movies.find((m) => String(m.id) === String(movieId)) || demoMovies[0]);
+      const theatreData = await fetchTheatres();
+      setTheatres(theatreData);
+    };
+    loadData();
+  }, [movieId]);
+
+  if (!movie) return <div className="container page-empty">Loading movie...</div>;
+
+  return (
+    <div className="container page-space">
+      <div className="movie-detail-header" style={{ backgroundImage: `url(${movie.bannerUrl})` }}>
+        <div className="detail-overlay">
+          <div className="detail-content">
+            <div className="detail-poster" style={{ backgroundImage: `url(${movie.posterUrl})` }} />
+            <div className="detail-copy">
+              <span className="eyebrow">{movie.genre}</span>
+              <h1>{movie.title}</h1>
+              <p>{movie.description}</p>
+              <div className="info-bar">
+                <span>⏱ {movie.duration}</span>
+                <span>🎬 {movie.language}</span>
+                <span>⭐ {movie.rating}</span>
+                <span>📅 {movie.releaseDate}</span>
+              </div>
+              <Link to={`/booking/${movie.id}`} className="btn btn-primary">Book Tickets</Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="details-grid">
+        <div className="theatre-panel">
+          <h3>Available Theatres</h3>
+          {theatres.map((theatre) => (
+            <div key={theatre.id} className="theatre-item">
+              <div>
+                <h4>{theatre.name}</h4>
+                <p>{theatre.address}</p>
+              </div>
+              <div className="showtimes-row">
+                {SHOWTIMES.map((time) => (
+                  <button key={time} className="time-pill">{time}</button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingPage() {
+  const { movieId } = useParams();
+  const navigate = useNavigate();
+  const [movie, setMovie] = useState(null);
+  const [selectedSeatType, setSelectedSeatType] = useState('Gold');
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [selectedTheatre, setSelectedTheatre] = useState('PVR Cinemas');
+  const [selectedShow, setSelectedShow] = useState('6:00 PM');
+  const [selectedDate, setSelectedDate] = useState('2026-10-04');
+
+  useEffect(() => {
+    const movies = demoMovies;
+    setMovie(movies.find((m) => String(m.id) === String(movieId)) || movies[0]);
+  }, [movieId]);
+
+  const pricePerSeat = PRICE_MAP[selectedSeatType] || 240;
+  const subtotal = selectedSeats.length * pricePerSeat;
+  const convenienceFee = Math.round(subtotal * 0.1);
+  const total = subtotal + convenienceFee;
+
+  const toggleSeat = (seat) => {
+    setSelectedSeats((prev) =>
+      prev.includes(seat) ? prev.filter((item) => item !== seat) : [...prev, seat]
+    );
+  };
+
+  const handleProceed = () => {
+    if (!selectedSeats.length) {
+      alert('Please select at least one seat.');
+      return;
+    }
+
+    const user = JSON.parse(localStorage.getItem('cinebook-user') || 'null');
+    if (!user) {
+      alert('Please login to continue with booking.');
+      navigate('/login');
+      return;
+    }
+
+    const bookingData = {
+      userId: user.id,
+      movieId: movie.id,
+      movieTitle: movie.title,
+      theatreName: selectedTheatre,
+      showTime: selectedShow,
+      bookingDate: selectedDate,
+      selectedSeats: selectedSeats.join(', '),
+      totalAmount: total,
+      paymentMethod: 'UPI',
+      paymentStatus: 'PENDING',
+      bookingStatus: 'CONFIRMED',
+    };
+
+    localStorage.setItem('cinebook-booking', JSON.stringify(bookingData));
+    navigate('/payment');
+  };
+
+  if (!movie) return <div className="container page-empty">Loading seat selection...</div>;
+
+  return (
+    <div className="container page-space">
+      <div className="booking-shell">
+        <div className="booking-main">
+          <div className="booking-header">
+            <div>
+              <span className="eyebrow">{movie.genre}</span>
+              <h2>{movie.title}</h2>
+            </div>
+            <div className="booking-controls">
+              <label>
+                Theatre
+                <select value={selectedTheatre} onChange={(e) => setSelectedTheatre(e.target.value)}>
+                  <option>PVR Cinemas</option>
+                  <option>INOX Leisure</option>
+                  <option>Carnival Cinema</option>
+                </select>
+              </label>
+              <label>
+                Show
+                <select value={selectedShow} onChange={(e) => setSelectedShow(e.target.value)}>
+                  {SHOWTIMES.map((time) => (
+                    <option key={time}>{time}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Date
+                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+              </label>
+            </div>
+          </div>
+
+          <div className="seat-legend">
+            <span><i className="seat available"></i> Available</span>
+            <span><i className="seat selected"></i> Selected</span>
+            <span><i className="seat booked"></i> Booked</span>
+          </div>
+
+          <div className="seat-type-selector">
+            {Object.entries(PRICE_MAP).map(([type, price]) => (
+              <button key={type} className={selectedSeatType === type ? 'active' : ''} onClick={() => setSelectedSeatType(type)}>
+                {type} ₹{price}
+              </button>
+            ))}
+          </div>
+
+          <div className="screen">Screen</div>
+
+          <div className="seat-grid">
+            {SEAT_LAYOUT.map((row, rowIndex) => (
+              <div key={rowIndex} className="seat-row">
+                {row.map((seat) => {
+                  const isSelected = selectedSeats.includes(seat);
+                  const isBooked = seat === 'A5' || seat === 'C5' || seat === 'D2';
+                  return (
+                    <button
+                      key={seat}
+                      className={`seat-btn ${isSelected ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
+                      disabled={isBooked}
+                      onClick={() => toggleSeat(seat)}
+                    >
+                      {seat}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <aside className="booking-summary">
+          <h3>Booking Summary</h3>
+          <div className="summary-row">
+            <span>Movie</span>
+            <strong>{movie.title}</strong>
+          </div>
+          <div className="summary-row">
+            <span>Theatre</span>
+            <strong>{selectedTheatre}</strong>
+          </div>
+          <div className="summary-row">
+            <span>Show</span>
+            <strong>{selectedShow}</strong>
+          </div>
+          <div className="summary-row">
+            <span>Seats</span>
+            <strong>{selectedSeats.length ? selectedSeats.join(', ') : 'None selected'}</strong>
+          </div>
+          <div className="summary-row">
+            <span>Ticket Price</span>
+            <strong>₹{subtotal}</strong>
+          </div>
+          <div className="summary-row">
+            <span>Convenience Fee</span>
+            <strong>₹{convenienceFee}</strong>
+          </div>
+          <div className="summary-row total">
+            <span>Total Amount</span>
+            <strong>₹{total}</strong>
+          </div>
+          <button className="btn btn-primary w-100" onClick={handleProceed}>Proceed to Payment</button>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function PaymentPage() {
+  const navigate = useNavigate();
+  const [booking, setBooking] = useState(() => JSON.parse(localStorage.getItem('cinebook-booking') || '{}'));
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!booking?.movieTitle) {
+      navigate('/');
+    }
+  }, [booking, navigate]);
+
+  const payNow = async () => {
+    const payload = {
+      paymentMethod,
+      bookingId: booking.bookingId || 'CB-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
+      amount: booking.totalAmount,
+    };
+
+    const result = await processPayment(payload);
+    setMessage(result.message || 'Payment processed successfully');
+
+    const finalBooking = { ...booking, paymentMethod, paymentStatus: result.status || 'SUCCESS', bookingStatus: 'CONFIRMED' };
+    const prevBookings = JSON.parse(localStorage.getItem('cinebook-bookings') || '[]');
+    localStorage.setItem('cinebook-bookings', JSON.stringify([finalBooking, ...prevBookings]));
+
+    if (result.status === 'SUCCESS') {
+      const savedBackend = await createBooking({
+        ...finalBooking,
+        bookingId: finalBooking.bookingId,
+        userId: finalBooking.userId,
+        movieId: finalBooking.movieId,
+        selectedSeats: finalBooking.selectedSeats,
+      });
+      console.log('Booking saved to backend:', savedBackend);
+    }
+
+    setTimeout(() => {
+      navigate('/bookings');
+    }, 1200);
+  };
+
+  return (
+    <div className="container page-space payment-page">
+      <div className="payment-card">
+        <h2>Payment</h2>
+        <div className="payment-summary-box">
+          <div className="summary-row"><span>Movie</span><strong>{booking.movieTitle}</strong></div>
+          <div className="summary-row"><span>Theatre</span><strong>{booking.theatreName}</strong></div>
+          <div className="summary-row"><span>Seats</span><strong>{booking.selectedSeats}</strong></div>
+          <div className="summary-row"><span>Ticket Price</span><strong>₹{booking.totalAmount - 60}</strong></div>
+          <div className="summary-row"><span>Convenience Fee</span><strong>₹60</strong></div>
+          <div className="summary-row total"><span>Total</span><strong>₹{booking.totalAmount}</strong></div>
+        </div>
+
+        <div className="payment-methods">
+          {['UPI', 'Credit Card', 'Debit Card', 'Net Banking'].map((method) => (
+            <button key={method} className={paymentMethod === method ? 'active' : ''} onClick={() => setPaymentMethod(method)}>
+              {method}
+            </button>
+          ))}
+        </div>
+
+        <button className="btn btn-primary w-100" onClick={payNow}>Pay Now</button>
+        {message && <p className="payment-status">{message}</p>}
+      </div>
+    </div>
+  );
+}
+
+function BookingsPage() {
+  const [bookings, setBookings] = useState(() => JSON.parse(localStorage.getItem('cinebook-bookings') || '[]'));
+
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('cinebook-bookings') || '[]');
+    if (!saved.length) {
+      setBookings(initialBookings);
+    }
+  }, []);
+
+  return (
+    <div className="container page-space">
+      <div className="section-head">
+        <h2>My Bookings</h2>
+        <button className="btn btn-outline">Download All Tickets</button>
+      </div>
+
+      <div className="booking-list">
+        {(bookings.length ? bookings : initialBookings).map((booking, index) => (
+          <div key={index} className="booking-item">
+            <div>
+              <span className="eyebrow">Booking ID: {booking.bookingId}</span>
+              <h3>{booking.movieTitle}</h3>
+              <p>{booking.theatreName} • {booking.bookingDate} • {booking.showTime}</p>
+              <p>Seats: {booking.selectedSeats}</p>
+            </div>
+            <div className="booking-status-box">
+              <span className="pill">{booking.paymentStatus || 'PAID'}</span>
+              <span className="pill secondary">{booking.bookingStatus || 'CONFIRMED'}</span>
+              <strong>₹{booking.totalAmount}</strong>
+              <button className="btn btn-secondary small">{booking.ticketDownload || 'Download Ticket'}</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LoginPage() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const user = await loginUser(formData);
+      localStorage.setItem('cinebook-user', JSON.stringify(user));
+      navigate('/');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="container page-space auth-wrap">
+      <div className="auth-card">
+        <h2>Login</h2>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+          <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+          {error && <p className="error-text">{error}</p>}
+          <button className="btn btn-primary w-100" type="submit">Login</button>
+        </form>
+        <p className="auth-link">New user? <Link to="/signup">Create account</Link></p>
+      </div>
+    </div>
+  );
+}
+
+function SignupPage() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await registerUser({ ...formData, role: 'USER' });
+      if (response.data) {
+        localStorage.setItem('cinebook-user', JSON.stringify(response.data));
+        navigate('/');
+      }
+    } catch (err) {
+      setError(err.message || 'Registration failed');
+    }
+  };
+
+  return (
+    <div className="container page-space auth-wrap">
+      <div className="auth-card">
+        <h2>Create Account</h2>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <input type="text" placeholder="Full Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+          <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+          <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+          {error && <p className="error-text">{error}</p>}
+          <button className="btn btn-primary w-100" type="submit">Sign Up</button>
+        </form>
+        <p className="auth-link">Already registered? <Link to="/login">Login</Link></p>
+      </div>
+    </div>
+  );
+}
+
+function AdminPage() {
+  const [movies, setMovies] = useState(demoMovies);
+
+  useEffect(() => {
+    fetchMovies().then((data) => setMovies(data));
+  }, []);
+
+  return (
+    <div className="container page-space admin-page">
+      <div className="admin-header">
+        <h2>Admin Dashboard</h2>
+        <button className="btn btn-primary">Add Movie</button>
+      </div>
+
+      <div className="admin-grid">
+        <div className="admin-panel">
+          <h3>Movies</h3>
+          {movies.map((movie) => (
+            <div key={movie.id} className="admin-row">
+              <div>
+                <strong>{movie.title}</strong>
+                <p>{movie.genre} • {movie.language}</p>
+              </div>
+              <div className="row-actions">
+                <button>Edit</button>
+                <button>Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="admin-panel">
+          <h3>Booker Overview</h3>
+          <div className="stat-box">
+            <span>Total Movies</span>
+            <strong>{movies.length}</strong>
+          </div>
+          <div className="stat-box">
+            <span>Total Bookings</span>
+            <strong>{initialBookings.length}</strong>
+          </div>
+          <div className="stat-box">
+            <span>Revenue</span>
+            <strong>₹2,84,000</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
