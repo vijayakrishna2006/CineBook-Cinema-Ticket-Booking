@@ -1,2 +1,2 @@
 # CineBook-Cinema-Ticket-Booking
-A complete full-stack Cinema Ticket Booking Website inspired by BookMyShow with React frontend, Spring Boot backend, and MySQL database
+A complete full-stack Cinema Ticket Booking Website React frontend, Spring Boot backend, and MySQL database
